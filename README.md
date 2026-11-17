@@ -34,14 +34,46 @@ interface FrameMetrics {
 - `exhaust` (генератор, прокручиваемый до конца без уступок),
 - `manual-chunked-20000` (ручная статичная нарезка по 20 000 точек через `setTimeout`),
 
-Пример тестируемых исполнителей:
-
-- `budget-4ms-steps-8-yield` (генератор, нарезка по бюджету непрерывной работы
-  4 мс, уступка через `scheduler.yield`),
-- `budget-4ms-steps-8-timeout` (то же, уступка через `setTimeout`).
-
 Параметры прогона (сценарии, исполнители, сиды) лежат в `defaultConfig`
 в `core/src/runner/run.ts`.
+
+## Как добавить своего исполнителя
+
+Свой способ уступать поток добавляется одним файлом и дальше замеряется наравне с контрольными уровнями, на тех же входных
+данных, в том же случайном порядке блоков, с той же фоновой нагрузкой.
+
+1. Завести файл в `core/src/executors/`, экспортирующий `Executor<Form.Generator>`
+   (или `Executor<Form.Plain>`, если механизм не требует генератора):
+
+```ts
+import { Form, Level } from "../types";
+import type { Executor } from "../types";
+
+export const myExecutor: Executor<Form.Generator> = {
+  id: "my-executor",
+  level: Level.Evaluated,
+  form: Form.Generator,
+  run: async (implementation, input) => {
+    const iterator = implementation(input);
+    for (;;) {
+      const step = iterator.next();
+      if (step.done) return step.value;
+      // здесь решение о том, когда и чем уступить поток
+    }
+  },
+};
+```
+
+2. Добавить его в массив `executors` в `core/src/executors/index.ts`.
+
+Требования к `run`: вернуть ровно тот результат, который дает реализация
+сценария (по нему считается хеш и сверяется совпадение результата с
+контрольным уровнем). `level: Level.Evaluated` отличает исследуемый
+исполнитель от контрольных уровней 1–3 в протоколе.
+
+Готовые примеры: `core/src/executors/scheduler.ts` (нарезка по бюджету
+непрерывной работы, уступка через `scheduler.yield` или `setTimeout`),
+`core/src/executors/manual-chunked.ts` (статичная нарезка по числу точек).
 
 ## Что дальше
 
