@@ -11,19 +11,22 @@ npm install
 npm run dev      # на localhost:4173
 ```
 
-`npm run build` — проверка типов плюс продакшн-сборка в `dist/`.
-
 ## Как пользоваться
 
 Открыть страницу, нажать "Прогон", дождаться конца.
-Прогон занимает несколько минут и выполняет следующее:
+Прогон занимает несколько минут.
 
-Результат — JSON протокола, он выводится в `<pre>` на странице. Скопировать и
-положить руками в `results/raw/<run-id>/`.
+Результат - JSON протокола, содержит следующие метрики:
 
-Что внутри протокола по каждому повтору: `durationMs`, `maxBlockingMs`,
-`totalBlockingMs`, `framesRendered` / `framesSkipped` / `framesExpected` и хеш
-результата.
+```ts
+interface FrameMetrics {
+  maxBlockingMs: number;
+  totalBlockingMs: number;
+  framesRendered: number;
+  framesSkipped: number;
+  framesExpected: number;
+}
+```
 
 В `environment` протокола пишется `schedulerYieldAvailable`: без него нельзя
 сказать, уступал прогон приоритетно или макрозадачей таймера, а по метрикам это
@@ -33,7 +36,7 @@ npm run dev      # на localhost:4173
 
 - `reference` (синхронно, база для сравнения),
 - `exhaust` (генератор, прокручиваемый до конца без уступок),
-- `manual-chunked-20000` (русная статичная нарезка по 20 000 точек через `setTimeout`),
+- `manual-chunked-20000` (ручная статичная нарезка по 20 000 точек через `setTimeout`),
 
 Пример тестируемых исполнителей:
 
