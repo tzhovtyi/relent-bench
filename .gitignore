@@ -1,0 +1,9 @@
+*.md
+!README.md
+
+node_modules/
+dist/
+results/raw/*/
+*.log
+.DS_Store
+.vite/
